@@ -1,89 +1,140 @@
-let highestZ = 1;
+var radius = 240; // how big of the radius
+var autoRotate = true; // auto rotate or not
+var rotateSpeed = -60; // unit: seconds/360 degrees
+var imgWidth = 120; // width of images (unit: px)
+var imgHeight = 170; // height of images (unit: px)
+// Link of background music - set 'null' if you dont want to play background music
+var bgMusicURL = 'https://api.soundcloud.com/tracks/143041228/stream?client_id=587aa2d384f7333a886010d5f52f302a';
+var bgMusicControls = true; // Show UI music control
+// ===================== start =======================
+// animation start after 1000 milliseconds
+setTimeout(init, 1000);
+var odrag = document.getElementById('drag-container');
+var ospin = document.getElementById('spin-container');
+var aImg = ospin.getElementsByTagName('img');
+var aVid = ospin.getElementsByTagName('video');
+var aEle = [...aImg, ...aVid]; // combine 2 arrays
+// Size of images
+ospin.style.width = imgWidth + "px";
+ospin.style.height = imgHeight + "px";
+// Size of ground - depend on radius
+var ground = document.getElementById('ground');
+ground.style.width = radius * 3 + "px";
+ground.style.height = radius * 3 + "px";
+var currentVideo = null;
 
-class Paper {
-  holdingPaper = false;
-  touchStartX = 0;
-  touchStartY = 0;
-  touchMoveX = 0;
-  touchMoveY = 0;
-  touchEndX = 0;
-  touchEndY = 0;
-  prevTouchX = 0;
-  prevTouchY = 0;
-  velX = 0;
-  velY = 0;
-  rotation = Math.random() * 30 - 15;
-  currentPaperX = 0;
-  currentPaperY = 0;
-  rotating = false;
+function playVideo(video) {
+  if (currentVideo !== video) {
+    if (currentVideo) {
+      currentVideo.pause(); // Pause the previously playing video
+    }
+    video.play(); // Play the new video
+    currentVideo = video; // Update the currently playing video
+  } else {
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  }
+}
 
-  init(paper) {
-    paper.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      if(!this.rotating) {
-        this.touchMoveX = e.touches[0].clientX;
-        this.touchMoveY = e.touches[0].clientY;
-        
-        this.velX = this.touchMoveX - this.prevTouchX;
-        this.velY = this.touchMoveY - this.prevTouchY;
-      }
-        
-      const dirX = e.touches[0].clientX - this.touchStartX;
-      const dirY = e.touches[0].clientY - this.touchStartY;
-      const dirLength = Math.sqrt(dirX*dirX+dirY*dirY);
-      const dirNormalizedX = dirX / dirLength;
-      const dirNormalizedY = dirY / dirLength;
-
-      const angle = Math.atan2(dirNormalizedY, dirNormalizedX);
-      let degrees = 180 * angle / Math.PI;
-      degrees = (360 + Math.round(degrees)) % 360;
-      if(this.rotating) {
-        this.rotation = degrees;
-      }
-
-      if(this.holdingPaper) {
-        if(!this.rotating) {
-          this.currentPaperX += this.velX;
-          this.currentPaperY += this.velY;
-        }
-        this.prevTouchX = this.touchMoveX;
-        this.prevTouchY = this.touchMoveY;
-
-        paper.style.transform = `translateX(${this.currentPaperX}px) translateY(${this.currentPaperY}px) rotateZ(${this.rotation}deg)`;
-      }
-    })
-
-    paper.addEventListener('touchstart', (e) => {
-      if(this.holdingPaper) return; 
-      this.holdingPaper = true;
-      
-      paper.style.zIndex = highestZ;
-      highestZ += 1;
-      
-      this.touchStartX = e.touches[0].clientX;
-      this.touchStartY = e.touches[0].clientY;
-      this.prevTouchX = this.touchStartX;
-      this.prevTouchY = this.touchStartY;
+function init(delayTime) {
+  for (var i = 0; i < aEle.length; i++) {
+    aEle[i].style.transform = "rotateY(" + (i * (360 / aEle.length)) + "deg) translateZ(" + radius + "px)";
+    aEle[i].style.transition = "transform 1s";
+    aEle[i].style.transitionDelay = delayTime || (aEle.length - i) / 4 + "s";
+  }
+  for (var i = 0; i < aVid.length; i++) {
+    aVid[i].addEventListener('click', function () {
+      playVideo(this);
     });
-    paper.addEventListener('touchend', () => {
-      this.holdingPaper = false;
-      this.rotating = false;
-    });
-
-    // For two-finger rotation on touch screens
-    paper.addEventListener('gesturestart', (e) => {
-      e.preventDefault();
-      this.rotating = true;
-    });
-    paper.addEventListener('gestureend', () => {
-      this.rotating = false;
+    aVid[i].addEventListener('touchstart', function () {
+      playVideo(this);
     });
   }
 }
 
-const papers = Array.from(document.querySelectorAll('.paper'));
+function applyTranform(obj) {
+  // Constrain the angle of camera (between 0 and 180)
+  if (tY > 180) tY = 180;
+  if (tY < 0) tY = 0;
+  // Apply the angle
+  obj.style.transform = "rotateX(" + (-tY) + "deg) rotateY(" + (tX) + "deg)";
+}
 
-papers.forEach(paper => {
-  const p = new Paper();
-  p.init(paper);
+function playSpin(yes) {
+  ospin.style.animationPlayState = (yes ? 'running' : 'paused');
+}
+
+var sX, sY, nX, nY, desX = 0,
+  desY = 0,
+  tX = 0,
+  tY = 10;
+
+// auto spin
+if (autoRotate) {
+  var animationName = (rotateSpeed > 0 ? 'spin' : 'spinRevert');
+  ospin.style.animation = `${animationName} ${Math.abs(rotateSpeed)}s infinite linear`;
+}
+
+// Add background music
+if (bgMusicURL) {
+var musicContainer = document.getElementById('music-container');
+var audioElement = document.createElement('audio');
+audioElement.src = bgMusicURL;
+audioElement.loop = true;
+if (bgMusicControls) {
+audioElement.controls = true;
+}
+audioElement.autoplay = true;
+musicContainer.appendChild(audioElement);
+}
+
+// Setup events for touch devices
+document.addEventListener('touchstart', function (e) {
+clearInterval(odrag.timer);
+var touch = e.touches[0];
+sX = touch.clientX;
+sY = touch.clientY;
+document.addEventListener('touchmove', onTouchMove);
+document.addEventListener('touchend', onTouchEnd);
 });
+
+function onTouchMove(e) {
+var touch = e.touches[0];
+nX = touch.clientX;
+nY = touch.clientY;
+desX = nX - sX;
+desY = nY - sY;
+tX += desX * 0.1;
+tY += desY * 0.1;
+applyTranform(odrag);
+sX = nX;
+sY = nY;
+}
+
+function onTouchEnd() {
+document.removeEventListener('touchmove', onTouchMove);
+document.removeEventListener('touchend', onTouchEnd);
+odrag.timer = setInterval(function () {
+desX *= 0.95;
+desY *= 0.95;
+tX += desX * 0.1;
+tY += desY * 0.1;
+applyTranform(odrag);
+playSpin(false);
+if (Math.abs(desX) < 0.5 && Math.abs(desY) < 0.5) {
+clearInterval(odrag.timer);
+playSpin(true);
+}
+}, 17);
+}
+
+// Setup events for mouse devices
+document.onmousewheel = function (e) {
+e = e || window.event;
+var d = e.wheelDelta / 20 || -e.detail;
+radius += d;
+init(1);
+};
