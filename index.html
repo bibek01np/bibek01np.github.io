@@ -49,6 +49,19 @@
 <style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
 <!-- partial -->
   <script  src="./script.js"></script>
+  <script>
+    // Check if the user is on a mobile device
+    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Dynamically load the appropriate script based on the device
+    if (isMobile) {
+      var script = document.createElement('script');
+      script.src = 'mobile.js';
+      document.head.appendChild(script);
+    } else {
+      // The user is on a laptop/PC, so the script.js will be loaded by default
+    }
+  </script>
 </body>
 
 
